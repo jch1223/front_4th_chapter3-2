@@ -11,7 +11,7 @@ import {
 } from '../__mocks__/handlersUtils';
 import App from '../App';
 import { server } from '../setupTests';
-import { Event } from '../types';
+import { Event, RepeatInfo } from '../types';
 
 // ! Hard 여기 제공 안함
 const setup = (element: ReactElement) => {
@@ -25,7 +25,7 @@ const saveSchedule = async (
   user: UserEvent,
   form: Omit<Event, 'id' | 'notificationTime' | 'repeat'>
 ) => {
-  const { title, date, startTime, endTime, location, description, category } = form;
+  const { title, date, startTime, endTime, location, description, category, repeat } = form;
 
   await user.click(screen.getAllByText('일정 추가')[0]);
 
@@ -323,4 +323,163 @@ it('notificationTime을 10으로 하면 지정 시간 10분 전 알람 텍스트
   });
 
   expect(screen.getByText('10분 후 기존 회의 일정이 시작됩니다.')).toBeInTheDocument();
+});
+
+describe('반복 이벤트', () => {
+  it('2월 29일에 매년 반복 이벤트 등록 시 "2월 마지막 날, 2월 29일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2024-02-29'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2024-02-29');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(await screen.findByLabelText('반복 유형'), '매년');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('2월 29일')).toBeInTheDocument();
+  });
+
+  it('윤년이 아닌 2월 28일에 매년 반복 이벤트 등록 시 "마지막날, 2월 28일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-02-28'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-02-28');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(screen.getByLabelText('반복 유형'), '매년');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('2월 28일')).toBeInTheDocument();
+  });
+
+  it('2월 29일에 매월 반복 이벤트 등록 시 "마지막날, 2월 29일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2024-02-29'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2024-02-29');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(await screen.findByLabelText('반복 유형'), '매월');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('29일')).toBeInTheDocument();
+  });
+
+  it('윤년이 아닌 2월 28일에 매월 반복 이벤트 등록 시 "마지막날, 2월 28일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-02-28'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-02-28');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(await screen.findByLabelText('반복 유형'), '매월');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('28일')).toBeInTheDocument();
+  });
+
+  it('31일에 매월 반복 이벤트 등록 시 "마지막날, 31일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-03-31'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-03-31');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(screen.getByLabelText('반복 유형'), '매월');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('31일')).toBeInTheDocument();
+  });
+
+  it('마지막날이 30일인 경우 매월 반복 이벤트 등록 시 "마지막날, 30일" 선택지가 나타나야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-04-30'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-04-30');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(screen.getByLabelText('반복 유형'), '매월');
+
+    const repeatOptions = await screen.findByLabelText('반복 간격 옵션');
+    const repeatOptionsDiv = repeatOptions.closest('div');
+
+    if (!repeatOptionsDiv) throw new Error('반복 간격 옵션을 찾을 수 없습니다.');
+
+    expect(within(repeatOptionsDiv).getByText('마지막날')).toBeInTheDocument();
+    expect(within(repeatOptionsDiv).getByText('30일')).toBeInTheDocument();
+  });
+
+  it('마지막날이 아닌 경우 반복 간격 옵션 영역이 노출 되지 않아야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-03-15'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-03-15');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.selectOptions(screen.getByLabelText('반복 유형'), '매월');
+
+    await act(async () => null);
+
+    const repeatOptions = screen.queryByLabelText('반복 간격 옵션');
+    expect(repeatOptions).not.toBeInTheDocument();
+  });
+
+  it('반복 종료를 날짜, 횟수, 종료없음 중 하나를 선택할 수 있어야 한다.', async () => {
+    const { user } = setup(<App />);
+
+    await user.click(screen.getByLabelText('반복 설정'));
+
+    const endOptions = await screen.getByLabelText('반복 종료').closest('div');
+    if (!endOptions) throw new Error('반복 종료 옵션을 찾을 수 없습니다.');
+
+    await user.click(screen.getByLabelText('날짜로 종료'));
+    expect(within(endOptions).getByLabelText('날짜')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('횟수로 종료'));
+    expect(within(endOptions).getByLabelText('반복 횟수')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('종료 없음'));
+    expect(within(endOptions).queryByLabelText('날짜')).not.toBeInTheDocument();
+    expect(within(endOptions).queryByLabelText('반복 횟수')).not.toBeInTheDocument();
+  });
+
+  it('반복 이벤트의 경우 달력 이벤트에 (반복) 표시가 되어야 한다.', async () => {
+    vi.setSystemTime(new Date('2025-02-15'));
+
+    const { user } = setup(<App />);
+
+    await user.type(screen.getByLabelText('날짜'), '2025-02-15');
+    await user.selectOptions(screen.getByLabelText('반복 유형'), '매월');
+  });
+  it('매일 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
+  it('매주 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
+  it('매월 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
+  it('매년 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
+  it('반복 이벤트를 수정하면 단일 이벤트로 변경되며, (반복) 표시가 사라져야 한다.', async () => {});
+  it('반복 이벤트를 삭제하면 해당 이벤트만 삭제 되어야 한다.', async () => {});
 });

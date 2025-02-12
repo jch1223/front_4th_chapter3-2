@@ -26,6 +26,8 @@ import {
   HStack,
   IconButton,
   Input,
+  Radio,
+  RadioGroup,
   Select,
   Table,
   Tbody,
@@ -51,8 +53,10 @@ import {
   formatMonth,
   formatWeek,
   getEventsForDay,
+  getLastDayOfMonth,
   getWeekDates,
   getWeeksAtMonth,
+  isLastDayOfMonth,
 } from './utils/dateUtils';
 import { findOverlappingEvents } from './utils/eventOverlap';
 import { getTimeErrorMessage } from './utils/timeValidation';
@@ -390,25 +394,42 @@ function App() {
                   <option value="yearly">매년</option>
                 </Select>
               </FormControl>
-              <HStack width="100%">
-                <FormControl>
-                  <FormLabel>반복 간격</FormLabel>
-                  <Input
-                    type="number"
-                    value={repeatInterval}
-                    onChange={(e) => setRepeatInterval(Number(e.target.value))}
-                    min={1}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>반복 종료일</FormLabel>
-                  <Input
-                    type="date"
-                    value={repeatEndDate}
-                    onChange={(e) => setRepeatEndDate(e.target.value)}
-                  />
-                </FormControl>
-              </HStack>
+              <FormControl>
+                <FormLabel>반복 간격</FormLabel>
+                <Input
+                  type="number"
+                  value={repeatInterval}
+                  onChange={(e) => setRepeatInterval(Number(e.target.value))}
+                  min={1}
+                />
+              </FormControl>
+              {!!date &&
+                isLastDayOfMonth(date) &&
+                (repeatType === 'monthly' || repeatType === 'yearly') && (
+                  <FormControl>
+                    <FormLabel id="repeat-options-label">반복 간격 옵션</FormLabel>
+                    <RadioGroup
+                      aria-labelledby="repeat-options-label"
+                      defaultValue="lastDayOfMonth"
+                    >
+                      <HStack>
+                        <Radio value="lastDayOfMonth">마지막날</Radio>
+                        <Radio value="specificDay">
+                          {repeatType === 'yearly' && `${new Date(date).getMonth() + 1}월`}{' '}
+                          {getLastDayOfMonth(date)}일
+                        </Radio>
+                      </HStack>
+                    </RadioGroup>
+                  </FormControl>
+                )}
+              <FormControl>
+                <FormLabel>반복 종료일</FormLabel>
+                <Input
+                  type="date"
+                  value={repeatEndDate}
+                  onChange={(e) => setRepeatEndDate(e.target.value)}
+                />
+              </FormControl>
             </VStack>
           )}
 

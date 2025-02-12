@@ -108,3 +108,25 @@ export function formatDate(currentDate: Date, day?: number) {
     fillZero(day ?? currentDate.getDate()),
   ].join('-');
 }
+
+export function getLastDayOfMonth(date: string) {
+  const currentDate = new Date(date);
+
+  if (currentDate.toString() === 'Invalid Date') {
+    throw new Error('유효하지 않은 날짜입니다.');
+  }
+
+  return new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+}
+
+export function isLastDayOfMonth(date: string) {
+  const currentDate = new Date(date);
+
+  if (currentDate.toString() === 'Invalid Date') {
+    throw new Error('유효하지 않은 날짜입니다.');
+  }
+
+  const lastDay = getLastDayOfMonth(date);
+
+  return currentDate.getDate() === lastDay;
+}

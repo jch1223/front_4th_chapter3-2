@@ -1,9 +1,13 @@
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface RepeatInfo {
+  id?: string;
   type: RepeatType;
   interval: number;
+  intervalOption?: 'lastDayOfMonth' | 'specificDay';
   endDate?: string;
+  count?: number;
+  infinite?: boolean;
 }
 
 export interface EventForm {

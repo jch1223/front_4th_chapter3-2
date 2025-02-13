@@ -18,7 +18,12 @@ export const useEventForm = (initialEvent?: Event) => {
   );
   const [repeatType, setRepeatType] = useState<RepeatType>(initialEvent?.repeat.type || 'none');
   const [repeatInterval, setRepeatInterval] = useState(initialEvent?.repeat.interval || 1);
-  const [repeatEndDate, setRepeatEndDate] = useState(initialEvent?.repeat.endDate || '');
+  const [repeatIntervalOption, setRepeatIntervalOption] = useState(
+    initialEvent?.repeat.intervalOption || 'lastDayOfMonth'
+  );
+  const [repeatEndOption, setRepeatEndOption] = useState<'never' | 'date' | 'count'>('never');
+  const [repeatEndDate, setRepeatEndDate] = useState(initialEvent?.repeat.endDate);
+  const [repeatEndCount, setRepeatEndCount] = useState(initialEvent?.repeat.count);
   const [notificationTime, setNotificationTime] = useState(initialEvent?.notificationTime || 10);
 
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -92,8 +97,14 @@ export const useEventForm = (initialEvent?: Event) => {
     setRepeatType,
     repeatInterval,
     setRepeatInterval,
+    repeatIntervalOption,
+    setRepeatIntervalOption,
+    repeatEndOption,
+    setRepeatEndOption,
     repeatEndDate,
     setRepeatEndDate,
+    repeatEndCount,
+    setRepeatEndCount,
     notificationTime,
     setNotificationTime,
     startTimeError,

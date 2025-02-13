@@ -93,8 +93,14 @@ function App() {
     setRepeatType,
     repeatInterval,
     setRepeatInterval,
+    repeatIntervalOption,
+    setRepeatIntervalOption,
+    repeatEndOption,
+    setRepeatEndOption,
     repeatEndDate,
     setRepeatEndDate,
+    repeatEndCount,
+    setRepeatEndCount,
     notificationTime,
     setNotificationTime,
     startTimeError,
@@ -410,7 +416,10 @@ function App() {
                     <FormLabel id="repeat-options-label">반복 간격 옵션</FormLabel>
                     <RadioGroup
                       aria-labelledby="repeat-options-label"
-                      defaultValue="lastDayOfMonth"
+                      defaultValue={repeatIntervalOption}
+                      onChange={(option) => {
+                        setRepeatIntervalOption(option as 'lastDayOfMonth' | 'specificDay');
+                      }}
                     >
                       <HStack>
                         <Radio value="lastDayOfMonth">마지막날</Radio>
@@ -423,12 +432,40 @@ function App() {
                   </FormControl>
                 )}
               <FormControl>
-                <FormLabel>반복 종료일</FormLabel>
-                <Input
-                  type="date"
-                  value={repeatEndDate}
-                  onChange={(e) => setRepeatEndDate(e.target.value)}
-                />
+                <FormLabel id="repeat-end-label">반복 종료</FormLabel>
+                <RadioGroup
+                  defaultValue={repeatEndOption}
+                  onChange={(option) => setRepeatEndOption(option as 'never' | 'date' | 'count')}
+                  aria-labelledby="repeat-end-label"
+                >
+                  <HStack>
+                    <Radio value="never">종료 없음</Radio>
+                    <Radio value="date">날짜로 종료</Radio>
+                    <Radio value="count">횟수로 종료</Radio>
+                  </HStack>
+                </RadioGroup>
+
+                {repeatEndOption === 'date' && (
+                  <FormControl>
+                    <FormLabel>반복 종료 날짜</FormLabel>
+                    <Input
+                      type="date"
+                      value={repeatEndDate}
+                      onChange={(e) => setRepeatEndDate(e.target.value)}
+                    />
+                  </FormControl>
+                )}
+
+                {repeatEndOption === 'count' && (
+                  <FormControl>
+                    <FormLabel>반복 종료 횟수</FormLabel>
+                    <Input
+                      type="number"
+                      value={repeatEndCount}
+                      onChange={(e) => setRepeatEndCount(Number(e.target.value))}
+                    />
+                  </FormControl>
+                )}
               </FormControl>
             </VStack>
           )}

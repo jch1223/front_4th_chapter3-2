@@ -199,6 +199,7 @@ function App() {
                     .filter((event) => new Date(event.date).toDateString() === date.toDateString())
                     .map((event) => {
                       const isNotified = notifiedEvents.includes(event.id);
+                      const isRepeated = event.repeat.type !== 'none';
                       return (
                         <Box
                           key={event.id}
@@ -212,7 +213,7 @@ function App() {
                           <HStack spacing={1}>
                             {isNotified && <BellIcon />}
                             <Text fontSize="sm" noOfLines={1}>
-                              {event.title}
+                              {isRepeated && <Text fontSize="xs">(반복)</Text>} {event.title}
                             </Text>
                           </HStack>
                         </Box>
@@ -268,6 +269,8 @@ function App() {
                           )}
                           {getEventsForDay(filteredEvents, day).map((event) => {
                             const isNotified = notifiedEvents.includes(event.id);
+                            const isRepeated = event.repeat.type !== 'none';
+
                             return (
                               <Box
                                 key={event.id}
@@ -281,7 +284,7 @@ function App() {
                                 <HStack spacing={1}>
                                   {isNotified && <BellIcon />}
                                   <Text fontSize="sm" noOfLines={1}>
-                                    {event.title}
+                                    {isRepeated && <Text fontSize="xs">(반복)</Text>} {event.title}
                                   </Text>
                                 </HStack>
                               </Box>

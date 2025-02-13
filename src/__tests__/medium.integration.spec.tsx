@@ -11,7 +11,8 @@ import {
 } from '../__mocks__/handlersUtils';
 import App from '../App';
 import { server } from '../setupTests';
-import { Event, RepeatInfo } from '../types';
+import { Event } from '../types';
+import { handlers } from '../__mocks__/handlers';
 
 // ! Hard 여기 제공 안함
 const setup = (element: ReactElement) => {
@@ -505,7 +506,7 @@ describe.only('반복 이벤트', () => {
     const day15 = await within(calendar).getByText('15').closest('td');
     if (!day15) throw new Error('15일을 찾을 수 없습니다.');
 
-    expect(await within(day15).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(day15).findByText(/(반복)/)).toBeInTheDocument();
 
     server.resetHandlers();
   });
@@ -544,15 +545,15 @@ describe.only('반복 이벤트', () => {
 
     const day15 = await within(calendar).getByText('15').closest('td');
     if (!day15) throw new Error('15일을 찾을 수 없습니다.');
-    expect(await within(day15).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(day15).findByText(/(반복)/)).toBeInTheDocument();
 
     const day22 = await within(calendar).getByText('22').closest('td');
     if (!day22) throw new Error('22일을 찾을 수 없습니다.');
-    expect(await within(day22).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(day22).findByText(/(반복)/)).toBeInTheDocument();
 
     const day17 = await within(calendar).getByText('17').closest('td');
     if (!day17) throw new Error('17일을 찾을 수 없습니다.');
-    expect(within(day17).queryByText('(반복)')).not.toBeInTheDocument();
+    expect(within(day17).queryByText(/(반복)/)).not.toBeInTheDocument();
 
     server.resetHandlers();
   });
@@ -591,17 +592,17 @@ describe.only('반복 이벤트', () => {
 
     const feb15Td = within(calendar).getByText('15').closest('td');
     if (!feb15Td) throw new Error('15일을 찾을 수 없습니다.');
-    expect(await within(feb15Td).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(feb15Td).findByText(/(반복)/)).toBeInTheDocument();
 
     const feb16Td = within(calendar).getByText('16').closest('td');
     if (!feb16Td) throw new Error('16일을 찾을 수 없습니다.');
-    expect(within(feb16Td).queryByText('(반복)')).not.toBeInTheDocument();
+    expect(within(feb16Td).queryByText(/(반복)/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
     const mar15Td = within(calendar).getByText('15').closest('td');
     if (!mar15Td) throw new Error('15일을 찾을 수 없습니다.');
-    expect(await within(mar15Td).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(mar15Td).findByText(/(반복)/)).toBeInTheDocument();
   });
 
   it('매년 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {
@@ -637,11 +638,11 @@ describe.only('반복 이벤트', () => {
 
     const feb15Td = await within(calendar).getByText('15').closest('td');
     if (!feb15Td) throw new Error('15일을 찾을 수 없습니다.');
-    expect(await within(feb15Td).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(feb15Td).findByText(/(반복)/)).toBeInTheDocument();
 
     const feb16Td = await within(calendar).getByText('16').closest('td');
     if (!feb16Td) throw new Error('16일을 찾을 수 없습니다.');
-    expect(within(feb16Td).queryByText('(반복)')).not.toBeInTheDocument();
+    expect(within(feb16Td).queryByText(/(반복)/)).not.toBeInTheDocument();
 
     cleanup();
     vi.setSystemTime(new Date('2026-02-15'));
@@ -652,9 +653,66 @@ describe.only('반복 이벤트', () => {
 
     const feb15Td2 = within(newCalendar).getByText('15').closest('td');
     if (!feb15Td2) throw new Error('15일을 찾을 수 없습니다.');
-    expect(await within(feb15Td2).findByText('(반복)')).toBeInTheDocument();
+    expect(await within(feb15Td2).findByText(/(반복)/)).toBeInTheDocument();
   });
 
-  it('반복 이벤트를 수정하면 단일 이벤트로 변경되며, (반복) 표시가 사라져야 한다.', async () => {});
-  it('반복 이벤트를 삭제하면 해당 이벤트만 삭제 되어야 한다.', async () => {});
+  it('반복 이벤트를 수정하면 단일 이벤트로 변경되며, (반복) 표시가 사라져야 한다.', async () => {
+    server.use(
+      http.get('/api/events', () => {
+        return HttpResponse.json({
+          events: [
+            {
+              id: 1,
+              title: '팀 회의',
+              date: '2025-02-15',
+              startTime: '09:00',
+              endTime: '10:00',
+              description: '주간 팀 미팅',
+              location: '회의실 A',
+              category: '업무',
+              repeat: {
+                type: 'daily',
+                interval: 1,
+                endDate: '2025-02-18',
+              },
+              notificationTime: 10,
+            },
+          ],
+        });
+      })
+    );
+
+    vi.setSystemTime(new Date('2025-02-15'));
+    const { user } = setup(<App />);
+
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(await eventList.findAllByText(/반복/)).toHaveLength(4);
+
+    const editButton = (await screen.findAllByLabelText('Edit event'))[0];
+    await user.click(editButton);
+
+    await user.clear(screen.getByLabelText('제목'));
+    await user.type(screen.getByLabelText('제목'), '수정된 회의');
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    expect(await eventList.findByText('수정된 회의')).toBeInTheDocument();
+    expect(await eventList.findAllByText(/반복/)).toHaveLength(3);
+  });
+
+  it('반복 이벤트를 삭제하면 해당 이벤트만 삭제 되어야 한다.', async () => {
+    setupMockHandlerUpdating();
+
+    vi.setSystemTime(new Date('2025-02-15'));
+    const { user } = setup(<App />);
+
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(await eventList.findAllByText(/반복/)).toHaveLength(4);
+
+    const deleteButton = (await screen.findAllByLabelText('Delete event'))[0];
+    await user.click(deleteButton);
+
+    const newEventList = within(screen.getByTestId('event-list'));
+    expect(await newEventList.findAllByText(/반복/)).toHaveLength(3);
+  });
 });

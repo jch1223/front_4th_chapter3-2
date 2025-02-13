@@ -24,14 +24,18 @@ export const setupMockHandlerUpdating = () => {
   const mockEvents: Event[] = [
     {
       id: '1',
-      title: '기존 회의',
-      date: '2024-10-15',
+      title: '팀 회의',
+      date: '2025-02-15',
       startTime: '09:00',
       endTime: '10:00',
-      description: '기존 팀 미팅',
-      location: '회의실 B',
+      description: '주간 팀 미팅',
+      location: '회의실 A',
       category: '업무',
-      repeat: { type: 'none', interval: 0 },
+      repeat: {
+        type: 'daily',
+        interval: 1,
+        endDate: '2025-02-18',
+      },
       notificationTime: 10,
     },
     {

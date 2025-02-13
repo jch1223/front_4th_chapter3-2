@@ -213,7 +213,7 @@ function App() {
                           <HStack spacing={1}>
                             {isNotified && <BellIcon />}
                             <Text fontSize="sm" noOfLines={1}>
-                              {isRepeated && <Text fontSize="xs">(반복)</Text>} {event.title}
+                              {isRepeated && '(반복)'} {event.title}
                             </Text>
                           </HStack>
                         </Box>
@@ -284,7 +284,7 @@ function App() {
                                 <HStack spacing={1}>
                                   {isNotified && <BellIcon />}
                                   <Text fontSize="sm" noOfLines={1}>
-                                    {isRepeated && <Text fontSize="xs">(반복)</Text>} {event.title}
+                                    {isRepeated && '(반복)'} {event.title}
                                   </Text>
                                 </HStack>
                               </Box>

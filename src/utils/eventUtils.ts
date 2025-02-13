@@ -18,12 +18,24 @@ function searchEvents(events: Event[], term: string) {
 
 function filterEventsByDateRangeAtWeek(events: Event[], currentDate: Date) {
   const weekDates = getWeekDates(currentDate);
-  return filterEventsByDateRange(events, weekDates[0], weekDates[6]);
+  return filterEventsByDateRange(
+    events,
+    weekDates[0],
+    new Date(weekDates[6].setHours(23, 59, 59, 999))
+  );
 }
 
 function filterEventsByDateRangeAtMonth(events: Event[], currentDate: Date) {
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const monthEnd = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999
+  );
   return filterEventsByDateRange(events, monthStart, monthEnd);
 }
 
@@ -74,7 +86,7 @@ export function deserializeEvents(
   const repeatEndDate = event.repeat.endDate
     ? new Date(event.repeat.endDate)
     : event.repeat.infinite
-      ? endDate
+      ? new Date('2025-06-30')
       : event.repeat.count
         ? calculateEndDateByCount(eventStartDate, event.repeat)
         : endDate;

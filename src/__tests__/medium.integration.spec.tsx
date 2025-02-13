@@ -1,5 +1,5 @@
 import { ChakraProvider } from '@chakra-ui/react';
-import { render, screen, within, act } from '@testing-library/react';
+import { render, screen, within, act, cleanup } from '@testing-library/react';
 import { UserEvent, userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { ReactElement } from 'react';
@@ -25,7 +25,7 @@ const saveSchedule = async (
   user: UserEvent,
   form: Omit<Event, 'id' | 'notificationTime' | 'repeat'>
 ) => {
-  const { title, date, startTime, endTime, location, description, category, repeat } = form;
+  const { title, date, startTime, endTime, location, description, category } = form;
 
   await user.click(screen.getAllByText('일정 추가')[0]);
 
@@ -325,7 +325,7 @@ it('notificationTime을 10으로 하면 지정 시간 10분 전 알람 텍스트
   expect(screen.getByText('10분 후 기존 회의 일정이 시작됩니다.')).toBeInTheDocument();
 });
 
-describe('반복 이벤트', () => {
+describe.only('반복 이벤트', () => {
   it('2월 29일에 매년 반복 이벤트 등록 시 "2월 마지막 날, 2월 29일" 선택지가 나타나야 한다.', async () => {
     vi.setSystemTime(new Date('2024-02-29'));
 
@@ -471,17 +471,190 @@ describe('반복 이벤트', () => {
   });
 
   it('반복 이벤트의 경우 달력 이벤트에 (반복) 표시가 되어야 한다.', async () => {
+    server.use(
+      http.get('/api/events', () => {
+        return HttpResponse.json({
+          events: [
+            {
+              id: 1,
+              title: '팀 회의',
+              date: '2025-02-15',
+              startTime: '09:00',
+              endTime: '10:00',
+              description: '주간 팀 미팅',
+              location: '회의실 A',
+              category: '업무',
+              repeat: {
+                type: 'daily',
+                interval: 1,
+                endDate: '2025-02-18',
+              },
+              notificationTime: 10,
+            },
+          ],
+        });
+      })
+    );
+    vi.setSystemTime(new Date('2025-02-15'));
+
+    setup(<App />);
+
+    const calendar = await screen.getByText('일정 보기').closest('div');
+    if (!calendar) throw new Error('일정보기를 찾을 수 없습니다.');
+
+    const day15 = await within(calendar).getByText('15').closest('td');
+    if (!day15) throw new Error('15일을 찾을 수 없습니다.');
+
+    expect(await within(day15).findByText('(반복)')).toBeInTheDocument();
+
+    server.resetHandlers();
+  });
+
+  it('매주 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {
+    server.use(
+      http.get('/api/events', () => {
+        return HttpResponse.json({
+          events: [
+            {
+              id: 1,
+              title: '팀 회의',
+              date: '2025-02-15',
+              startTime: '09:00',
+              endTime: '10:00',
+              description: '주간 팀 미팅',
+              location: '회의실 A',
+              category: '업무',
+              repeat: {
+                type: 'weekly',
+                interval: 1,
+                endDate: '2025-02-22',
+              },
+              notificationTime: 10,
+            },
+          ],
+        });
+      })
+    );
+    vi.setSystemTime(new Date('2025-02-15'));
+
+    setup(<App />);
+
+    const calendar = await screen.getByText('일정 보기').closest('div');
+    if (!calendar) throw new Error('일정보기를 찾을 수 없습니다.');
+
+    const day15 = await within(calendar).getByText('15').closest('td');
+    if (!day15) throw new Error('15일을 찾을 수 없습니다.');
+    expect(await within(day15).findByText('(반복)')).toBeInTheDocument();
+
+    const day22 = await within(calendar).getByText('22').closest('td');
+    if (!day22) throw new Error('22일을 찾을 수 없습니다.');
+    expect(await within(day22).findByText('(반복)')).toBeInTheDocument();
+
+    const day17 = await within(calendar).getByText('17').closest('td');
+    if (!day17) throw new Error('17일을 찾을 수 없습니다.');
+    expect(within(day17).queryByText('(반복)')).not.toBeInTheDocument();
+
+    server.resetHandlers();
+  });
+
+  it('매월 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {
+    server.use(
+      http.get('/api/events', () => {
+        return HttpResponse.json({
+          events: [
+            {
+              id: 1,
+              title: '팀 회의',
+              date: '2025-02-15',
+              startTime: '09:00',
+              endTime: '10:00',
+              description: '주간 팀 미팅',
+              location: '회의실 A',
+              category: '업무',
+              repeat: {
+                type: 'monthly',
+                interval: 1,
+                endDate: '2025-03-15',
+              },
+              notificationTime: 10,
+            },
+          ],
+        });
+      })
+    );
     vi.setSystemTime(new Date('2025-02-15'));
 
     const { user } = setup(<App />);
 
-    await user.type(screen.getByLabelText('날짜'), '2025-02-15');
-    await user.selectOptions(screen.getByLabelText('반복 유형'), '매월');
+    const calendar = screen.getByText('일정 보기').closest('div');
+    if (!calendar) throw new Error('일정보기를 찾을 수 없습니다.');
+
+    const feb15Td = within(calendar).getByText('15').closest('td');
+    if (!feb15Td) throw new Error('15일을 찾을 수 없습니다.');
+    expect(await within(feb15Td).findByText('(반복)')).toBeInTheDocument();
+
+    const feb16Td = within(calendar).getByText('16').closest('td');
+    if (!feb16Td) throw new Error('16일을 찾을 수 없습니다.');
+    expect(within(feb16Td).queryByText('(반복)')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    const mar15Td = within(calendar).getByText('15').closest('td');
+    if (!mar15Td) throw new Error('15일을 찾을 수 없습니다.');
+    expect(await within(mar15Td).findByText('(반복)')).toBeInTheDocument();
   });
-  it('매일 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
-  it('매주 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
-  it('매월 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
-  it('매년 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {});
+
+  it('매년 반복 이벤트를 등록하면 달력에 반복 이벤트가 나타나야 한다.', async () => {
+    server.use(
+      http.get('/api/events', () => {
+        return HttpResponse.json({
+          events: [
+            {
+              id: 1,
+              title: '팀 회의',
+              date: '2025-02-15',
+              startTime: '09:00',
+              endTime: '10:00',
+              description: '주간 팀 미팅',
+              location: '회의실 A',
+              category: '업무',
+              repeat: {
+                type: 'yearly',
+                interval: 1,
+                endDate: '2026-02-15',
+              },
+              notificationTime: 10,
+            },
+          ],
+        });
+      })
+    );
+    vi.setSystemTime(new Date('2025-02-15'));
+    setup(<App />);
+
+    const calendar = await screen.getByText('일정 보기').closest('div');
+    if (!calendar) throw new Error('일정보기를 찾을 수 없습니다.');
+
+    const feb15Td = await within(calendar).getByText('15').closest('td');
+    if (!feb15Td) throw new Error('15일을 찾을 수 없습니다.');
+    expect(await within(feb15Td).findByText('(반복)')).toBeInTheDocument();
+
+    const feb16Td = await within(calendar).getByText('16').closest('td');
+    if (!feb16Td) throw new Error('16일을 찾을 수 없습니다.');
+    expect(within(feb16Td).queryByText('(반복)')).not.toBeInTheDocument();
+
+    cleanup();
+    vi.setSystemTime(new Date('2026-02-15'));
+    setup(<App />);
+
+    const newCalendar = await screen.getByText('일정 보기').closest('div');
+    if (!newCalendar) throw new Error('일정보기를 찾을 수 없습니다.');
+
+    const feb15Td2 = within(newCalendar).getByText('15').closest('td');
+    if (!feb15Td2) throw new Error('15일을 찾을 수 없습니다.');
+    expect(await within(feb15Td2).findByText('(반복)')).toBeInTheDocument();
+  });
+
   it('반복 이벤트를 수정하면 단일 이벤트로 변경되며, (반복) 표시가 사라져야 한다.', async () => {});
   it('반복 이벤트를 삭제하면 해당 이벤트만 삭제 되어야 한다.', async () => {});
 });

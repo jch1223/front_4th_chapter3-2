@@ -454,18 +454,20 @@ describe('반복 이벤트', () => {
 
     await user.click(screen.getByLabelText('반복 설정'));
 
-    const endOptions = await screen.getByLabelText('반복 종료').closest('div');
+    const endOptions = await screen.getByLabelText('반복 종료').parentElement?.closest('div');
     if (!endOptions) throw new Error('반복 종료 옵션을 찾을 수 없습니다.');
 
     await user.click(screen.getByLabelText('날짜로 종료'));
-    expect(within(endOptions).getByLabelText('날짜')).toBeInTheDocument();
+    expect(await within(endOptions).findByLabelText('반복 종료 날짜')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('횟수로 종료'));
-    expect(within(endOptions).getByLabelText('반복 횟수')).toBeInTheDocument();
+    expect(within(endOptions).getByLabelText('반복 종료 횟수')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('종료 없음'));
-    expect(within(endOptions).queryByLabelText('날짜')).not.toBeInTheDocument();
-    expect(within(endOptions).queryByLabelText('반복 횟수')).not.toBeInTheDocument();
+    await act(async () => null);
+
+    expect(within(endOptions).queryByLabelText('반복 종료 날짜')).not.toBeInTheDocument();
+    expect(within(endOptions).queryByLabelText('반복 종료 횟수')).not.toBeInTheDocument();
   });
 
   it('반복 이벤트의 경우 달력 이벤트에 (반복) 표시가 되어야 한다.', async () => {

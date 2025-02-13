@@ -92,6 +92,42 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     }
   };
 
+  const deleteRepeatEvent = async (event: Event) => {
+    try {
+      const response = await fetch(`/api/events/${event.originalEventId}`, {
+        method: 'put',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: event.originalEventId,
+          excludeDates: [...(event.excludeDates || []), event.date],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('반복 일정 삭제 실패');
+      }
+
+      await fetchEvents();
+
+      toast({
+        title: '반복 일정이 삭제되었습니다.',
+        status: 'info',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error deleting repeat event:', error);
+      toast({
+        title: '반복 일정 삭제 실패',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   async function init() {
     await fetchEvents();
     toast({
@@ -106,5 +142,5 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { events, fetchEvents, saveEvent, deleteEvent };
+  return { events, fetchEvents, saveEvent, deleteEvent, deleteRepeatEvent };
 };

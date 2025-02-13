@@ -1,5 +1,5 @@
 import { Event, RepeatInfo } from '../types';
-import { getWeekDates, isDateInRange } from './dateUtils';
+import { formatDate, getWeekDates, isDateInRange } from './dateUtils';
 
 function filterEventsByDateRange(events: Event[], start: Date, end: Date): DeserializedEvent[] {
   return events.flatMap((event) => deserializeEvents(event, start, end));
@@ -95,7 +95,7 @@ export function deserializeEvents(
   let eventCount = 0;
 
   while (currentDate <= repeatEndDate && currentDate <= endDate) {
-    if (currentDate >= startDate) {
+    if (currentDate >= startDate && !event.excludeDates?.includes(formatDate(currentDate))) {
       result.push({
         ...event,
         id: `${event.id}-${currentDate.toISOString()}`,

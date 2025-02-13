@@ -20,6 +20,8 @@ export interface EventForm {
   category: string;
   repeat: RepeatInfo;
   notificationTime: number; // 분 단위로 저장
+  originalEventId?: string;
+  excludeDates?: string[];
 }
 
 export interface Event extends EventForm {

@@ -113,8 +113,9 @@ function App() {
     editEvent,
   } = useEventForm();
 
-  const { events, saveEvent, deleteEvent } = useEventOperations(Boolean(editingEvent), () =>
-    setEditingEvent(null)
+  const { events, saveEvent, deleteEvent, deleteRepeatEvent } = useEventOperations(
+    Boolean(editingEvent),
+    () => setEditingEvent(null)
   );
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
@@ -163,6 +164,7 @@ function App() {
         endDate: repeatEndDate || undefined,
       },
       notificationTime,
+      excludeDates: editingEvent?.excludeDates || [],
     };
 
     const overlapping = findOverlappingEvents(eventData, events);
@@ -568,7 +570,13 @@ function App() {
                     <IconButton
                       aria-label="Delete event"
                       icon={<DeleteIcon />}
-                      onClick={() => deleteEvent(event.id)}
+                      onClick={() => {
+                        if (event.repeat.type === 'none') {
+                          deleteEvent(event.id);
+                        } else {
+                          deleteRepeatEvent(event);
+                        }
+                      }}
                     />
                   </HStack>
                 </HStack>
@@ -622,6 +630,7 @@ function App() {
                       endDate: repeatEndDate || undefined,
                     },
                     notificationTime,
+                    excludeDates: editingEvent?.excludeDates || [],
                   });
                 }}
                 ml={3}

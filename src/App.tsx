@@ -103,6 +103,7 @@ function App() {
     setRepeatEndCount,
     notificationTime,
     setNotificationTime,
+    originalEventId,
     startTimeError,
     endTimeError,
     editingEvent,
@@ -151,6 +152,7 @@ function App() {
 
     const eventData: Event | EventForm = {
       id: editingEvent ? editingEvent.id : undefined,
+      originalEventId: originalEventId,
       title,
       date,
       startTime,
@@ -617,6 +619,7 @@ function App() {
                   setIsOverlapDialogOpen(false);
                   saveEvent({
                     id: editingEvent ? editingEvent.id : undefined,
+                    originalEventId: originalEventId,
                     title,
                     date,
                     startTime,

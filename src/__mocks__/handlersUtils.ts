@@ -40,6 +40,18 @@ export const setupMockHandlerUpdating = () => {
     },
     {
       id: '2',
+      title: '기존 회의',
+      date: '2024-10-15',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '기존 팀 미팅',
+      location: '회의실 B',
+      category: '업무',
+      repeat: { type: 'none', interval: 0 },
+      notificationTime: 10,
+    },
+    {
+      id: '3',
       title: '기존 회의2',
       date: '2024-10-15',
       startTime: '11:00',
